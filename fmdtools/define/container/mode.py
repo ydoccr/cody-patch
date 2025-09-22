@@ -54,8 +54,8 @@ class Fault(BaseContainer, readonly=True):
         discrete ('sim') time. Default is 'sim'.
     """
 
-    prob: float = 1.0
-    cost: float = 0.0
+    prob: np.float64 = np.float64(1.0)
+    cost: np.float64 = np.float64(0.0)
     phases: tuple = ()
     disturbances: tuple = ()
     units: str = 'sim'

@@ -36,11 +36,11 @@ class Parameter(BaseContainer, readonly=True):
     Examples
     --------
     >>> class ExampleParameter(Parameter, readonly=True):
-    ...    x: float = 1.0
-    ...    y: float = 3.0
-    ...    z: float = 0.0
-    ...    x_lim = (0, 10)
-    ...    y_set = (1.0, 2.0, 3.0, 4.0)
+    ...    x: np.float64 = np.float64(1.0)
+    ...    y: np.float64 = np.float64(3.0)
+    ...    z: np.float64 = np.float64(0.0)
+    ...    x_lim = (np.float64(0.0), np.float64(10.0))
+    ...    y_set = (np.float64(1.0), np.float64(2.0), np.float64(3.0), np.float64(4.0))
 
     defines a parameter with float x and y fields with default values of 30 and
     x_lim minimum/maximum values for x and y_set possible values for y. Note that

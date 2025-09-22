@@ -64,7 +64,7 @@ class Rand(BaseContainer):
     Rand is meant to be extended in model definition with random states, e.g.:
 
     >>> class RandState(State):
-    ...     noise: np.float64=1.0
+    ...     noise: np.float64=np.float64(1.0)
     >>> class ExampleRand(Rand):
     ...     s: RandState = RandState()
 
@@ -101,13 +101,13 @@ class Rand(BaseContainer):
     rolename = "r"
     rng: np.random._generator.Generator = np.random.default_rng()
     probs: list = list()
-    probdens: float = 1.0
-    seed: int = 42
+    probdens: np.float64 = np.float64(1.0)
+    seed: np.int64 = np.int64(42)
     run_stochastic: bool = False
     track_pdf: bool = False
     default_track = ('s', 'probdens')
 
-    def __init__(self, *args, seed=42, s_kwargs={}, **kwargs):
+    def __init__(self, *args, seed=np.int64(42), s_kwargs={}, **kwargs):
         args = self.get_true_fields(*args,
                                     seed=seed,
                                     rng=np.random.default_rng(seed),
@@ -196,7 +196,7 @@ class Rand(BaseContainer):
         if self.probs:
             return as_prob(self.probs)
         else:
-            return 1.0
+            return np.float64(1.0)
 
     def update_stochastic_states(self):
         """Update the defined stochastic states defined to auto-update."""

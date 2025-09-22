@@ -34,8 +34,8 @@ class State(BaseContainer):
     corresponding field related to a simulation, e.g.,
 
     >>> class ExampleState(State):
-    ...     x : np.float64=1.0
-    ...     y : np.float64=1.0
+    ...     x : np.float64=np.float64(1.0) # should this be this way?
+    ...     y : np.float64=np.float64(1.0) # used to be just 1.0 on the right... is this bad now
 
     Creates a class point with fields x and y which are tagged as floats with default
     values of 1.0.
@@ -362,8 +362,8 @@ class State(BaseContainer):
 class ExampleState(State):
     """Example State class used for docstring tests."""
 
-    x: np.float64 = 1.0
-    y: np.float64 = 1.0
+    x: np.float64 = np.float64(1.0)
+    y: np.float64 = np.float64(1.0)
 
 
 if __name__ == "__main__":

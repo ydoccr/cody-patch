@@ -17,7 +17,7 @@ CONDITIONS OF ANY KIND, either express or implied. See the License for the
 specific language governing permissions and limitations under the License.
 """
 
-from fmdtools.define.base import set_arg_as_type, remove_para, get_repr
+from fmdtools.define.base import remove_para, get_repr#, set_arg_as_type
 from fmdtools.analyze.common import get_sub_include
 from fmdtools.analyze.history import History
 
@@ -27,6 +27,27 @@ import copy
 import pickle
 import numpy as np
 import sys
+"""
+conversion logic below -- chat generated logic, so idk if this is the right way to go about this. 
+"""
+PY_TO_NP = {
+    float: np.float64,
+    int:   np.int64,
+    bool:  np.bool_
+}
+def _to_numpy_type(value):
+    """python to numpy conversion. am i missing any relevant types? 
+       modified & super()'d __setattr__.  
+    """
+    if isinstance(value, (float, int, bool)):
+        return PY_TO_NP[type(value)](value)
+    if isinstance(value, (list, tuple)):
+        return np.array(value)
+    return value
+
+"""
+conversion logic above
+"""
 
 
 class BaseContainer(dataobject, mapping=True, iterable=True, copy_default=True):
@@ -41,21 +62,44 @@ class BaseContainer(dataobject, mapping=True, iterable=True, copy_default=True):
     default_track = 'all'
     rolename = 'x'
 
+    """
+    setattr, setitem overrides below
+    """
+    def __setattr__(self, name, value):
+        """assigned attributes should be auto-converted to np"""
+        value = _to_numpy_type(value)
+        super().__setattr__(name, value)
+
+    def __setitem__(self, key, value):
+        """dictionary compatibility"""
+        value = _to_numpy_type(value)
+        super().__setitem__(key, value)
+
+
+
+
     def __repr__(self):
         return self.create_repr(with_classname=True, fields="all")
-
+    
     def create_repr(self, with_classname=True, fields="all", one_line=True,
-                    with_name=False):
-        """Create repr-friendly string for container."""
+                with_name=False):
+        """Modified new create_repr; loops through fields and checks whether np.generics are present, eliminating ugly representation"""
         if with_classname:
             repr_str = self.__class__.__name__
         else:
             repr_str = ""
         if fields == "all":
             fields = self.__fields__
-        field_str = ", ".join(get_repr(self[f], f) for f in fields
-                              if f in dir(self))
-        return repr_str+"("+field_str+")"
+
+        field_strs = []
+        for f in fields:
+            if f in dir(self):
+                v = self[f]
+                if isinstance(v, np.generic):
+                    v = v.item()
+                field_strs.append(f"{f}={v}")
+
+        return repr_str + "(" + ", ".join(field_strs) + ")"
 
     def get_typename(self):
         """Containers are typed as containers unless specified otherwise."""
@@ -165,18 +209,19 @@ class BaseContainer(dataobject, mapping=True, iterable=True, copy_default=True):
         new_args = []
         new_kwargs = {}
         for i, typed_field in enumerate(self.__fields__):
-            true_type = self.__annotations__.get(typed_field, False)
+            # true_type = self.__annotations__.get(typed_field, False)
+            # I'm scared--simply changed set_arg_as_type_ to new py to np method
             try:
                 if i < len(args):
-                    new_arg = set_arg_as_type(true_type, args[i])
+                    new_arg = _to_numpy_type(args[i])
                     new_args.append(new_arg)
                 elif typed_field in kwargs:
-                    new_arg = set_arg_as_type(true_type, kwargs[typed_field])
+                    new_arg = _to_numpy_type(kwargs[typed_field])
                     new_kwargs[typed_field] = new_arg
 
             except TypeError as e:
                 try:
-                    raise Exception("For field " + typed_field + " " + str(true_type) +
+                    raise Exception("For field " + typed_field + " " + str("this field used to be 'true_type' in the code") +
                                     ": unable to convert from " + str(new_arg) + " " +
                                     str(type(new_arg))) from e
                 except UnboundLocalError as e1:
@@ -302,6 +347,9 @@ class BaseContainer(dataobject, mapping=True, iterable=True, copy_default=True):
         >>> ex_nest
         ExNestContainer(e1=ExContainer(x=3.0, y=4.0), z=20.0)
         """
+
+
+        
         if fieldname not in self.__fields__:
             raise Exception(fieldname+" not a property of "+self.name)
         if as_copy:
@@ -311,8 +359,8 @@ class BaseContainer(dataobject, mapping=True, iterable=True, copy_default=True):
             field.assign(value, as_copy=as_copy)
         else:
             try:
-                true_type = self.__annotations__[fieldname]
-                setattr(self, fieldname, true_type(value))
+                # true_type = self.__annotations__[fieldname]
+                setattr(self, fieldname, _to_numpy_type(value))
             except TypeError as e:
                 raise Exception("Poorly Specified field " + fieldname +
                                 " in class " + self.__class__.__name__) from e
@@ -478,13 +526,13 @@ def check_container_pick(container, *args, **kwargs):
 
 
 class ExContainer(BaseContainer):
-    x: float = 1.0
-    y: float = 2.0
+    x: np.float64 = np.float64(1.0)
+    y: np.float64 = np.float64(2.0)
 
 
 class ExNestContainer(BaseContainer):
     e1: ExContainer = ExContainer()
-    z: float = 20.0
+    z: np.float64 = np.float64(20.0)
 
 
 if __name__ == "__main__":
